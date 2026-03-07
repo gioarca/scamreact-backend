@@ -1,0 +1,22 @@
+{
+  "name": "scam-react-backend",
+  "version": "1.0.0",
+  "description": "Backend API per ScamReact - raccolta segnalazioni anonime",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js"
+  },
+  "dependencies": {
+    "chokidar": "^5.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "es-define-property": "^1.0.1",
+    "express": "^4.19.2",
+    "mongodb": "^7.1.0",
+    "mongoose": "^8.4.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4"
+  }
+}
