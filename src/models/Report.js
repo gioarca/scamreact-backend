@@ -2,7 +2,11 @@ const mongoose = require("mongoose");
 
 const reportSchema = new mongoose.Schema(
   {
-    // Testo del messaggio truffa (già redatto lato client o qui)
+    // ─────────────────────────────────────────────
+    // CORE
+    // ─────────────────────────────────────────────
+
+    // Testo della segnalazione (redatto lato client prima dell'invio)
     message: {
       type: String,
       required: true,
@@ -11,23 +15,28 @@ const reportSchema = new mongoose.Schema(
       trim: true,
     },
 
-    // Tipo di truffa
+    // Tipo di truffa — allineato alle 13 categorie del form
     scamType: {
       type: String,
       required: true,
       enum: [
-        "phishing_smishing",
-        "impersonation_bank",
-        "fake_investment",
-        "marketplace_scam",
-        "job_scam",
-        "romance_scam",
-        "tech_support",
-        "other",
+        "account_identity_theft", // Furto d'identità / account
+        "payment_diversion", // Deviazione pagamenti (BEC)
+        "purchase_sale_scam", // Acquisto / Vendita
+        "charity_donation_scam", // Falsa beneficenza
+        "investment_scam", // Investimenti
+        "job_scam", // Lavoro falso
+        "recovery_scam", // Recupero fondi
+        "phishing", // Phishing / Smishing
+        "romance_scam", // Sentimentale / Romantico
+        "threat_intimidation_scam", // Minacce / Estorsione
+        "unexpected_money_scam", // Soldi inattesi (eredità, vincite)
+        "home_renovation_scam", // Lavori in casa
+        "other", // Altro
       ],
     },
 
-    // Canale attraverso cui è arrivata
+    // Canale attraverso cui è arrivata la truffa
     channel: {
       type: String,
       required: true,
@@ -44,37 +53,67 @@ const reportSchema = new mongoose.Schema(
       ],
     },
 
-    // Fascia di importo coinvolto (se rilevabile, altrimenti "na")
+    // ─────────────────────────────────────────────
+    // EVIDENZA DI CONTATTO
+    // Numero di telefono, URL o altro identificatore
+    // pubblico fornito dall'utente per il canale scelto.
+    // Presente solo per canali phone/website.
+    // ─────────────────────────────────────────────
+
+    contactEvidence: {
+      type: String,
+      maxlength: 500,
+      trim: true,
+      default: null,
+    },
+
+    // ─────────────────────────────────────────────
+    // DATI OPZIONALI UTENTE
+    // ─────────────────────────────────────────────
+
+    // Fascia di importo coinvolto
     amountRange: {
       type: String,
       enum: ["na", "lt_50", "50_200", "200_1000", "gt_1000"],
       default: "na",
     },
 
-    // età dell'utente (non obbligatoria, ma se presente deve essere un numero valido)
+    // Età dell'utente (non obbligatoria)
     age: {
       type: Number,
       min: 18,
       max: 100,
+      default: null,
     },
 
-    // genere dell'utente (non obbligatorio, ma se presente deve essere uno dei valori specificati)
-    gender: {
-      type: String,
-      enum: ["male", "female", "non_binary", "prefer_not_to_say"],
-    },
-
-    // regione (non obbligatoria, ma se presente deve essere una stringa breve)
+    // Regione italiana (non obbligatoria)
     location: {
       type: String,
       maxlength: 100,
       trim: true,
+      default: null,
     },
 
-    // data del tentativo di truffa (non obbligatoria, ma se presente deve essere una data valida)
-    scamDate: {
-      type: Date,
+    // ─────────────────────────────────────────────
+    // MICRO-SURVEY — validazione funzione "Verifica"
+    // Registra se l'utente ha cercato online il contatto
+    // prima di segnalarlo. Usato per misurare la domanda
+    // della futura funzione di ricerca nel database.
+    // ─────────────────────────────────────────────
+
+    priorSearch: {
+      type: String,
+      enum: [
+        "found", // Sì, ha trovato altre segnalazioni online
+        "not_found", // Sì, ma non ha trovato nulla
+        "no_search", // No, non ha cercato
+      ],
+      default: null,
     },
+
+    // ─────────────────────────────────────────────
+    // CONSENSO E METADATI
+    // ─────────────────────────────────────────────
 
     // Consenso alla condivisione pubblica anonima
     consentPublic: {
@@ -82,15 +121,13 @@ const reportSchema = new mongoose.Schema(
       default: true,
     },
 
-    // Metadati anonimi (nessun dato personale)
+    // Metadati anonimi — nessun dato personale
     meta: {
-      // Paese/lingua rilevato dall'header Accept-Language
-      lang: { type: String, maxlength: 10 },
-      // User-agent generico (solo browser family, non versione)
-      browserFamily: { type: String, maxlength: 50 },
+      lang: { type: String, maxlength: 10 }, // Accept-Language header
+      browserFamily: { type: String, maxlength: 50 }, // Solo famiglia browser, no versione
     },
 
-    // Data di creazione (usata per trend temporali)
+    // Timestamp di creazione — immutabile, usato per trend temporali
     createdAt: {
       type: Date,
       default: Date.now,
@@ -98,14 +135,19 @@ const reportSchema = new mongoose.Schema(
     },
   },
   {
-    // Non aggiunge updatedAt (le segnalazioni sono immutabili)
-    timestamps: false,
+    timestamps: false, // Le segnalazioni sono immutabili, updatedAt non serve
     versionKey: false,
   },
 );
 
-// Indici per query frequenti
+// ─────────────────────────────────────────────
+// INDICI
+// ─────────────────────────────────────────────
+
+// Query frequenti per dashboard e trend
 reportSchema.index({ scamType: 1, createdAt: -1 });
 reportSchema.index({ channel: 1, createdAt: -1 });
+reportSchema.index({ priorSearch: 1, createdAt: -1 }); // analisi domanda funzione Verifica
+reportSchema.index({ contactEvidence: 1 }); // ricerca per numero/URL (futura funzione Verifica)
 
 module.exports = mongoose.model("Report", reportSchema);
