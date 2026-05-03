@@ -32,6 +32,7 @@ const reportSchema = new mongoose.Schema(
         "threat_intimidation_scam", // Minacce / Estorsione
         "unexpected_money_scam", // Soldi inattesi (eredità, vincite)
         "home_renovation_scam", // Lavori in casa
+        "card_cloning_scam", // Clonazione carta / skimmer
         "other", // Altro
       ],
     },
@@ -55,9 +56,12 @@ const reportSchema = new mongoose.Schema(
 
     // ─────────────────────────────────────────────
     // EVIDENZA DI CONTATTO
-    // Numero di telefono, URL o altro identificatore
-    // pubblico fornito dall'utente per il canale scelto.
-    // Presente solo per canali phone/website.
+    // Identificatore pubblico fornito dall'utente
+    // per il canale scelto. Valore in base al canale:
+    //   phone/whatsapp/sms/telegram → numero di telefono
+    //   email                       → indirizzo email mittente
+    //   website                     → URL del sito
+    //   instagram/facebook          → username o URL profilo
     // ─────────────────────────────────────────────
 
     contactEvidence: {
@@ -148,6 +152,7 @@ const reportSchema = new mongoose.Schema(
 reportSchema.index({ scamType: 1, createdAt: -1 });
 reportSchema.index({ channel: 1, createdAt: -1 });
 reportSchema.index({ priorSearch: 1, createdAt: -1 }); // analisi domanda funzione Verifica
-reportSchema.index({ contactEvidence: 1 }); // ricerca per numero/URL (futura funzione Verifica)
+reportSchema.index({ contactEvidence: 1 }); // ricerca per numero/URL/email/username (futura funzione Verifica)
+reportSchema.index({ channel: 1, contactEvidence: 1 }); // query per tipo: "tutti i profili Instagram segnalati"
 
 module.exports = mongoose.model("Report", reportSchema);
